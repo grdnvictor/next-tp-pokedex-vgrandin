@@ -16,8 +16,6 @@ import {Pokemon, PokemonType} from "@/types/types";
 const DEFAULT_LIMIT = 50;
 const DEFAULT_TYPE = 'all';
 
-
-
 export default function Home() {
     const [pokemons, setPokemons] = useState<Pokemon[]>([]);
     const [types, setTypes] = useState<PokemonType[]>([]);
@@ -51,8 +49,38 @@ export default function Home() {
         });
     }, [nameFilter, typeFilter]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            // see: https://stackoverflow.com/questions/9439725/how-to-detect-if-browser-window-is-scrolled-to-bottom
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+                const page = Math.floor(pokemons.length / limitFilter) + 1;
+                /*
+                 * Problème sur l'offset ? Car si on change de limit en cours de route
+                 * Le système de pagination ne fonctionne plus ??
+                 */
+                //const offset = pokemons.length;
+
+                const url = `https://nestjs-pokedex-api.vercel.app/pokemons?limit=${limitFilter}&page=${page}`;
+                fetch(url).then(fetchedPokemons => {
+                    return fetchedPokemons.json()
+                }).then((fetchedPokemons) => {
+                    setPokemons([
+                        ...pokemons,
+                        ...fetchedPokemons
+                    ]);
+                });
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [pokemons]);
+
     return (
-        <>
+        <div>
             <AppHeader/>
             <div className="container mx-auto p-4">
                 <header className="flex justify-between items-center mb-4 gap-4">
@@ -125,6 +153,6 @@ export default function Home() {
                 }
 
             </div>
-        </>
+        </div>
     );
 }
